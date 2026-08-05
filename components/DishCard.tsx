@@ -9,6 +9,7 @@ interface DishCardProps {
   onEdit: (dish: Dish) => void;
   onDelete: (dish: Dish) => void;
   onToggleAvailability: (dish: Dish) => void;
+  onAddToCart?: (dish: Dish) => void;
 }
 
 export const DishCard = ({
@@ -17,6 +18,7 @@ export const DishCard = ({
   onEdit,
   onDelete,
   onToggleAvailability,
+  onAddToCart,
 }: DishCardProps) => {
   return (
     <View style={styles.card}>
@@ -29,25 +31,36 @@ export const DishCard = ({
         </Text>
       </View>
 
-      {isAdmin ? (
-        <View style={styles.actions}>
+      <View style={styles.actions}>
+        {dish.is_available && onAddToCart ? (
           <TouchableOpacity
-            style={styles.button}
-            onPress={() => onToggleAvailability(dish)}
+            style={styles.buttonSuccess}
+            onPress={() => onAddToCart(dish)}
           >
-            <Text style={styles.buttonText}>Toggle</Text>
+            <Text style={styles.buttonText}>Add to Cart</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.button} onPress={() => onEdit(dish)}>
-            <Text style={styles.buttonText}>Edit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.buttonDanger}
-            onPress={() => onDelete(dish)}
-          >
-            <Text style={styles.buttonText}>Delete</Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
+        ) : null}
+
+        {isAdmin ? (
+          <>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => onToggleAvailability(dish)}
+            >
+              <Text style={styles.buttonText}>Toggle</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={() => onEdit(dish)}>
+              <Text style={styles.buttonText}>Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.buttonDanger}
+              onPress={() => onDelete(dish)}
+            >
+              <Text style={styles.buttonText}>Delete</Text>
+            </TouchableOpacity>
+          </>
+        ) : null}
+      </View>
     </View>
   );
 };
@@ -94,6 +107,12 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: "#4b2e1f",
     paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  buttonSuccess: {
+    backgroundColor: "#2e7d32",
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8,
   },

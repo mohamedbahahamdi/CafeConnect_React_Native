@@ -12,6 +12,7 @@ interface DishListProps {
   onEdit: (dish: Dish) => void;
   onDelete: (dish: Dish) => void;
   onToggleAvailability: (dish: Dish) => void;
+  onAddToCart?: (dish: Dish) => void;
   title?: string;
   emptyMessage?: string;
 }
@@ -23,6 +24,7 @@ export const DishList = ({
   onEdit,
   onDelete,
   onToggleAvailability,
+  onAddToCart,
   title = "Dishes",
   emptyMessage = "No dishes created yet.",
 }: DishListProps) => {
@@ -47,6 +49,7 @@ export const DishList = ({
               onEdit={onEdit}
               onDelete={onDelete}
               onToggleAvailability={onToggleAvailability}
+              onAddToCart={onAddToCart}
             />
           ))
         )}

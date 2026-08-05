@@ -1,132 +1,128 @@
 import { Redirect, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Alert, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import { AppHeader } from "@/components/AppHeader";
-import { DishList } from "@/components/DishList";
+import { OrderCard } from "@/components/OrderCard";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import {
-  deleteDish,
-  getDishes,
-  toggleDishAvailability,
-} from "@/services/dishService";
+  getAllOrders,
+  getUserOrders,
+  updateOrderStatus,
+} from "@/services/orderService";
 import { getUserProfile } from "@/services/userService";
-import type { Dish } from "@/types/dish";
+import type { Order, OrderStatus } from "@/types/order";
 
-export default function HomeScreen() {
+export default function OrdersScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { addToCart, itemCount } = useCart();
-  const [dishes, setDishes] = useState<Dish[]>([]);
+  const { itemCount } = useCart();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [role, setRole] = useState(1);
-  const [loadingDishes, setLoadingDishes] = useState(true);
   const [menuVisible, setMenuVisible] = useState(false);
 
-  useEffect(() => {
-    if (!user) {
-      return;
+  const fetchOrders = async () => {
+    if (!user) return;
+    try {
+      const profile = await getUserProfile(user.uid);
+      const userRole = Number(profile?.role ?? 1);
+      setRole(userRole);
+      const adminFlag = userRole === 0;
+      setIsAdmin(adminFlag);
+
+      const fetchedOrders = adminFlag
+        ? await getAllOrders(userRole)
+        : await getUserOrders(user.uid);
+
+      setOrders(fetchedOrders);
+    } catch (error) {
+      Alert.alert("Error", "Failed to fetch orders.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
+  };
 
-    const loadData = async () => {
-      try {
-        const [profile, dishesData] = await Promise.all([
-          getUserProfile(user.uid),
-          getDishes(),
-        ]);
-        const nextRole = Number(profile?.role ?? 1);
-        setRole(nextRole);
-        setIsAdmin(nextRole === 0);
-        setDishes(dishesData);
-      } catch (error) {
-        Alert.alert("Error", "Unable to load dishes.");
-      } finally {
-        setLoadingDishes(false);
-      }
-    };
-
-    loadData();
+  useEffect(() => {
+    fetchOrders();
   }, [user]);
 
   if (!user) {
     return <Redirect href="/login" />;
   }
 
-  const handleCreate = () => router.push("/create-dish" as never);
-  const handleEdit = (dish: Dish) =>
-    router.push({
-      pathname: "/edit-dish" as never,
-      params: { dishId: dish.id },
-    } as never);
-
-  const handleDelete = async (dish: Dish) => {
-    if (!isAdmin) {
-      Alert.alert("Permission denied", "Only admins can delete dishes.");
-      return;
-    }
-
-    Alert.alert("Delete dish", `Delete ${dish.name}?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await deleteDish(dish.id, role);
-            setDishes((current) =>
-              current.filter((item) => item.id !== dish.id),
-            );
-          } catch (error) {
-            Alert.alert("Error", "Unable to delete dish.");
-          }
-        },
-      },
-    ]);
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchOrders();
   };
 
-  const handleToggleAvailability = async (dish: Dish) => {
-    if (!isAdmin) {
-      Alert.alert("Permission denied", "Only admins can change availability.");
-      return;
-    }
-
+  const handleUpdateStatus = async (
+    orderId: string,
+    nextStatus: OrderStatus,
+  ) => {
     try {
-      await toggleDishAvailability(dish.id, !dish.is_available, role);
-      setDishes((current) =>
-        current.map((item) =>
-          item.id === dish.id
-            ? { ...item, is_available: !item.is_available }
-            : item,
+      await updateOrderStatus(orderId, nextStatus, role);
+      setOrders((prev) =>
+        prev.map((ord) =>
+          ord.id === orderId ? { ...ord, status: nextStatus } : ord,
         ),
       );
+      Alert.alert("Status Updated", `Order updated to ${nextStatus}.`);
     } catch (error) {
-      Alert.alert("Error", "Unable to update dish availability.");
+      Alert.alert("Error", "Failed to update order status.");
     }
-  };
-
-  const handleAddToCart = (dish: Dish) => {
-    addToCart(dish);
-    Alert.alert("Added to Cart", `${dish.name} added to your cart.`);
   };
 
   return (
     <View style={styles.container}>
-      <AppHeader title="Home" onMenuPress={() => setMenuVisible(true)} />
-
-      <DishList
-        dishes={dishes}
-        isAdmin={isAdmin}
-        onCreate={handleCreate}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onToggleAvailability={handleToggleAvailability}
-        onAddToCart={handleAddToCart}
-        title="Today's Menu"
-        emptyMessage={
-          loadingDishes ? "Loading dishes..." : "No dishes created yet."
-        }
+      <AppHeader
+        title={isAdmin ? "All Orders" : "My Orders"}
+        onMenuPress={() => setMenuVisible(true)}
       />
+
+      {loading ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#4b2e1f" />
+        </View>
+      ) : orders.length === 0 ? (
+        <View style={styles.centered}>
+          <Text style={styles.emptyText}>No orders found.</Text>
+        </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor="#4b2e1f"
+            />
+          }
+        >
+          {orders.map((order) => (
+            <OrderCard
+              key={order.id}
+              order={order}
+              isAdmin={isAdmin}
+              onUpdateStatus={handleUpdateStatus}
+            />
+          ))}
+        </ScrollView>
+      )}
 
       <Modal
         visible={menuVisible}
@@ -141,12 +137,11 @@ export default function HomeScreen() {
               style={styles.menuItem}
               onPress={() => {
                 setMenuVisible(false);
-                router.replace("/home" as never);
+                router.push("/home" as never);
               }}
             >
               <Text style={styles.menuItemText}>Menu</Text>
             </Pressable>
-
             <Pressable
               style={styles.menuItem}
               onPress={() => {
@@ -163,19 +158,17 @@ export default function HomeScreen() {
                 ) : null}
               </View>
             </Pressable>
-
             <Pressable
               style={styles.menuItem}
               onPress={() => {
                 setMenuVisible(false);
-                router.push("/orders" as never);
+                router.replace("/orders" as never);
               }}
             >
               <Text style={styles.menuItemText}>
                 {isAdmin ? "All Orders" : "My Orders"}
               </Text>
             </Pressable>
-
             <Pressable
               style={[styles.menuItem, styles.logoutItem]}
               onPress={() => {
@@ -203,6 +196,18 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: "#f7efe8",
+  },
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#7a5c45",
+  },
+  list: {
+    paddingBottom: 24,
   },
   modalOverlay: {
     flex: 1,
