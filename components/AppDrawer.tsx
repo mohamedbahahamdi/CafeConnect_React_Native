@@ -1,4 +1,4 @@
-import { DrawerActions, useNavigation } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -10,35 +10,34 @@ interface AppDrawerProps {
 }
 
 export const AppDrawer = ({ onClose }: AppDrawerProps) => {
-  const navigation = useNavigation();
-  const { logout } = useAuth();
+  const router = useRouter();
+  const { logout, isAdmin } = useAuth();
   const { itemCount } = useCart();
 
   const handleLogout = async () => {
-    await logout();
     onClose?.();
+    await logout();
+  };
+
+  const handleNavigate = (
+    pathname: string,
+    params?: Record<string, string>,
+  ) => {
+    onClose?.();
+    if (params) {
+      router.push({ pathname, params } as never);
+    } else {
+      router.push(pathname as never);
+    }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>CafeeConnect</Text>
-      <Pressable
-        style={styles.item}
-        onPress={() => {
-          navigation.dispatch(DrawerActions.closeDrawer());
-          navigation.navigate("home" as never);
-          onClose?.();
-        }}
-      >
+      <Pressable style={styles.item} onPress={() => handleNavigate("/home")}>
         <Text style={styles.itemText}>Menu</Text>
       </Pressable>
-      <Pressable
-        style={styles.item}
-        onPress={() => {
-          navigation.navigate("cart" as never);
-          onClose?.();
-        }}
-      >
+      <Pressable style={styles.item} onPress={() => handleNavigate("/cart")}>
         <View style={styles.rowBetween}>
           <Text style={styles.itemText}>Cart</Text>
           {itemCount > 0 ? (
@@ -48,15 +47,23 @@ export const AppDrawer = ({ onClose }: AppDrawerProps) => {
           ) : null}
         </View>
       </Pressable>
+
+      {isAdmin ? (
+        <Pressable
+          style={styles.item}
+          onPress={() => handleNavigate("/orders", { filter: "all" })}
+        >
+          <Text style={styles.itemText}>All Orders</Text>
+        </Pressable>
+      ) : null}
+
       <Pressable
         style={styles.item}
-        onPress={() => {
-          navigation.navigate("orders" as never);
-          onClose?.();
-        }}
+        onPress={() => handleNavigate("/orders", { filter: "mine" })}
       >
         <Text style={styles.itemText}>My Orders</Text>
       </Pressable>
+
       <Pressable style={styles.item} onPress={handleLogout}>
         <Text style={styles.logoutText}>Logout</Text>
       </Pressable>
@@ -67,9 +74,6 @@ export const AppDrawer = ({ onClose }: AppDrawerProps) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#4b2e1f",
-    paddingTop: 48,
-    paddingHorizontal: 20,
   },
   title: {
     color: "#fff8f2",
@@ -109,3 +113,4 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
+

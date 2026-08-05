@@ -3,14 +3,13 @@ import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Modal,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 
+import { AppDrawerModal } from "@/components/AppDrawerModal";
 import { AppHeader } from "@/components/AppHeader";
 import { CartItemCard } from "@/components/CartItemCard";
 import { CustomButton } from "@/components/CustomButton";
@@ -20,7 +19,7 @@ import { createOrder } from "@/services/orderService";
 
 export default function CartScreen() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { cart, updateQuantity, removeFromCart, clearCart, total, itemCount } =
     useCart();
   const [submitting, setSubmitting] = useState(false);
@@ -32,7 +31,6 @@ export default function CartScreen() {
 
   const handlePlaceOrder = async () => {
     if (cart.length === 0) {
-      Alert.alert("Empty Cart", "Your cart is empty. Add some dishes first!");
       return;
     }
 
@@ -40,16 +38,10 @@ export default function CartScreen() {
     try {
       await createOrder(user.uid, cart, total);
       clearCart();
-      Alert.alert(
-        "Order Placed!",
-        "Your order has been submitted successfully.",
-        [
-          {
-            text: "View Orders",
-            onPress: () => router.push("/orders" as never),
-          },
-        ],
-      );
+      router.replace({
+        pathname: "/orders",
+        params: { filter: "mine" },
+      } as never);
     } catch (error) {
       Alert.alert(
         "Order Error",
@@ -66,7 +58,7 @@ export default function CartScreen() {
 
       {cart.length === 0 ? (
         <View style={styles.emptyWrap}>
-          <Text style={styles.emptyText}>Your cart is currently empty.</Text>
+          <Text style={styles.emptyText}>Your cart is empty.</Text>
           <CustomButton
             title="Browse Menu"
             onPress={() => router.push("/home" as never)}
@@ -102,76 +94,16 @@ export default function CartScreen() {
                 style={styles.spinner}
               />
             ) : (
-              <CustomButton
-                title="Place Order"
-                onPress={handlePlaceOrder}
-              />
+              <CustomButton title="Place Order" onPress={handlePlaceOrder} />
             )}
           </View>
         </View>
       )}
 
-      <Modal
+      <AppDrawerModal
         visible={menuVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setMenuVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.menuCard}>
-            <Text style={styles.menuTitle}>CafeeConnect</Text>
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => {
-                setMenuVisible(false);
-                router.push("/home" as never);
-              }}
-            >
-              <Text style={styles.menuItemText}>Menu</Text>
-            </Pressable>
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => {
-                setMenuVisible(false);
-                router.replace("/cart" as never);
-              }}
-            >
-              <View style={styles.rowBetween}>
-                <Text style={styles.menuItemText}>Cart</Text>
-                {itemCount > 0 ? (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{itemCount}</Text>
-                  </View>
-                ) : null}
-              </View>
-            </Pressable>
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => {
-                setMenuVisible(false);
-                router.push("/orders" as never);
-              }}
-            >
-              <Text style={styles.menuItemText}>My Orders</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.menuItem, styles.logoutItem]}
-              onPress={() => {
-                setMenuVisible(false);
-                logout();
-              }}
-            >
-              <Text style={styles.logoutText}>Logout</Text>
-            </Pressable>
-            <Pressable
-              style={styles.closeButton}
-              onPress={() => setMenuVisible(false)}
-            >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setMenuVisible(false)}
+      />
     </View>
   );
 }
@@ -233,63 +165,5 @@ const styles = StyleSheet.create({
   spinner: {
     marginVertical: 12,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.35)",
-    justifyContent: "flex-start",
-  },
-  menuCard: {
-    width: "72%",
-    height: "100%",
-    backgroundColor: "#4b2e1f",
-    paddingTop: 48,
-    paddingHorizontal: 20,
-  },
-  menuTitle: {
-    color: "#fff8f2",
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: 24,
-  },
-  menuItem: {
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.15)",
-  },
-  rowBetween: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  menuItemText: {
-    color: "#fff8f2",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  badge: {
-    backgroundColor: "#d97706",
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  badgeText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  closeButton: {
-    marginTop: 24,
-  },
-  closeButtonText: {
-    color: "#f4d9c6",
-    fontWeight: "600",
-  },
-  logoutItem: {
-    marginTop: 12,
-  },
-  logoutText: {
-    color: "#fecaca",
-    fontSize: 16,
-    fontWeight: "700",
-  },
 });
+

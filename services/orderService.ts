@@ -3,7 +3,6 @@ import {
   collection,
   doc,
   getDocs,
-  orderBy,
   query,
   serverTimestamp,
   updateDoc,
@@ -19,6 +18,29 @@ const ensureAdminAccess = (role: number) => {
   if (role !== 0) {
     throw new Error("Permission denied");
   }
+};
+
+const getTimestampMs = (createdAt: unknown): number => {
+  if (!createdAt) return Date.now();
+  if (
+    typeof createdAt === "object" &&
+    createdAt !== null &&
+    "toMillis" in createdAt &&
+    typeof (createdAt as { toMillis: () => number }).toMillis === "function"
+  ) {
+    return (createdAt as { toMillis: () => number }).toMillis();
+  }
+  if (
+    typeof createdAt === "object" &&
+    createdAt !== null &&
+    "seconds" in createdAt &&
+    typeof (createdAt as { seconds: number }).seconds === "number"
+  ) {
+    return (createdAt as { seconds: number }).seconds * 1000;
+  }
+  if (createdAt instanceof Date) return createdAt.getTime();
+  if (typeof createdAt === "number") return createdAt;
+  return Date.now();
 };
 
 const toOrder = (id: string, data: Record<string, unknown>): Order => ({
@@ -69,28 +91,32 @@ export const getUserOrders = async (userId: string): Promise<Order[]> => {
   const q = query(
     collection(db, ORDERS_COLLECTION),
     where("userId", "==", userId),
-    orderBy("createdAt", "desc"),
   );
 
   const snapshot = await getDocs(q);
 
-  return snapshot.docs.map((docSnapshot) =>
+  const orders = snapshot.docs.map((docSnapshot) =>
     toOrder(docSnapshot.id, docSnapshot.data()),
+  );
+
+  return orders.sort(
+    (a, b) => getTimestampMs(b.createdAt) - getTimestampMs(a.createdAt),
   );
 };
 
 export const getAllOrders = async (role: number): Promise<Order[]> => {
   ensureAdminAccess(role);
 
-  const q = query(
-    collection(db, ORDERS_COLLECTION),
-    orderBy("createdAt", "desc"),
-  );
+  const q = query(collection(db, ORDERS_COLLECTION));
 
   const snapshot = await getDocs(q);
 
-  return snapshot.docs.map((docSnapshot) =>
+  const orders = snapshot.docs.map((docSnapshot) =>
     toOrder(docSnapshot.id, docSnapshot.data()),
+  );
+
+  return orders.sort(
+    (a, b) => getTimestampMs(b.createdAt) - getTimestampMs(a.createdAt),
   );
 };
 
@@ -104,3 +130,4 @@ export const updateOrderStatus = async (
   const orderRef = doc(db, ORDERS_COLLECTION, orderId);
   await updateDoc(orderRef, { status });
 };
+

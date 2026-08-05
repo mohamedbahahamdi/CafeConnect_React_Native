@@ -1,7 +1,8 @@
 import { Redirect, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Alert, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, StyleSheet, View } from "react-native";
 
+import { AppDrawerModal } from "@/components/AppDrawerModal";
 import { AppHeader } from "@/components/AppHeader";
 import { DishList } from "@/components/DishList";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,16 +12,13 @@ import {
   getDishes,
   toggleDishAvailability,
 } from "@/services/dishService";
-import { getUserProfile } from "@/services/userService";
 import type { Dish } from "@/types/dish";
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user, logout } = useAuth();
-  const { addToCart, itemCount } = useCart();
+  const { user, role, isAdmin } = useAuth();
+  const { addToCart } = useCart();
   const [dishes, setDishes] = useState<Dish[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [role, setRole] = useState(1);
   const [loadingDishes, setLoadingDishes] = useState(true);
   const [menuVisible, setMenuVisible] = useState(false);
 
@@ -31,13 +29,7 @@ export default function HomeScreen() {
 
     const loadData = async () => {
       try {
-        const [profile, dishesData] = await Promise.all([
-          getUserProfile(user.uid),
-          getDishes(),
-        ]);
-        const nextRole = Number(profile?.role ?? 1);
-        setRole(nextRole);
-        setIsAdmin(nextRole === 0);
+        const dishesData = await getDishes();
         setDishes(dishesData);
       } catch (error) {
         Alert.alert("Error", "Unable to load dishes.");
@@ -128,72 +120,10 @@ export default function HomeScreen() {
         }
       />
 
-      <Modal
+      <AppDrawerModal
         visible={menuVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setMenuVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.menuCard}>
-            <Text style={styles.menuTitle}>CafeeConnect</Text>
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => {
-                setMenuVisible(false);
-                router.replace("/home" as never);
-              }}
-            >
-              <Text style={styles.menuItemText}>Menu</Text>
-            </Pressable>
-
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => {
-                setMenuVisible(false);
-                router.push("/cart" as never);
-              }}
-            >
-              <View style={styles.rowBetween}>
-                <Text style={styles.menuItemText}>Cart</Text>
-                {itemCount > 0 ? (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{itemCount}</Text>
-                  </View>
-                ) : null}
-              </View>
-            </Pressable>
-
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => {
-                setMenuVisible(false);
-                router.push("/orders" as never);
-              }}
-            >
-              <Text style={styles.menuItemText}>
-                {isAdmin ? "All Orders" : "My Orders"}
-              </Text>
-            </Pressable>
-
-            <Pressable
-              style={[styles.menuItem, styles.logoutItem]}
-              onPress={() => {
-                setMenuVisible(false);
-                logout();
-              }}
-            >
-              <Text style={styles.logoutText}>Logout</Text>
-            </Pressable>
-            <Pressable
-              style={styles.closeButton}
-              onPress={() => setMenuVisible(false)}
-            >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setMenuVisible(false)}
+      />
     </View>
   );
 }
@@ -204,63 +134,5 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#f7efe8",
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.35)",
-    justifyContent: "flex-start",
-  },
-  menuCard: {
-    width: "72%",
-    height: "100%",
-    backgroundColor: "#4b2e1f",
-    paddingTop: 48,
-    paddingHorizontal: 20,
-  },
-  menuTitle: {
-    color: "#fff8f2",
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: 24,
-  },
-  menuItem: {
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.15)",
-  },
-  rowBetween: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  menuItemText: {
-    color: "#fff8f2",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  badge: {
-    backgroundColor: "#d97706",
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  badgeText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  closeButton: {
-    marginTop: 24,
-  },
-  closeButtonText: {
-    color: "#f4d9c6",
-    fontWeight: "600",
-  },
-  logoutItem: {
-    marginTop: 12,
-  },
-  logoutText: {
-    color: "#fecaca",
-    fontSize: 16,
-    fontWeight: "700",
-  },
 });
+

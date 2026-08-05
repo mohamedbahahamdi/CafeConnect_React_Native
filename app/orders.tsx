@@ -1,10 +1,9 @@
-import { Redirect, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Modal,
-  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -12,40 +11,36 @@ import {
   View,
 } from "react-native";
 
+import { AppDrawerModal } from "@/components/AppDrawerModal";
 import { AppHeader } from "@/components/AppHeader";
 import { OrderCard } from "@/components/OrderCard";
 import { useAuth } from "@/hooks/useAuth";
-import { useCart } from "@/hooks/useCart";
 import {
   getAllOrders,
   getUserOrders,
   updateOrderStatus,
 } from "@/services/orderService";
-import { getUserProfile } from "@/services/userService";
 import type { Order, OrderStatus } from "@/types/order";
 
 export default function OrdersScreen() {
   const router = useRouter();
-  const { user, logout } = useAuth();
-  const { itemCount } = useCart();
+  const params = useLocalSearchParams<{ filter?: string }>();
+  const { user, role, isAdmin } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [role, setRole] = useState(1);
   const [menuVisible, setMenuVisible] = useState(false);
 
-  const fetchOrders = async () => {
+  const activeFilter = params.filter;
+  const showAllOrders = isAdmin && activeFilter === "all";
+  const pageTitle = showAllOrders ? "All Orders" : "My Orders";
+
+  const fetchOrders = useCallback(async () => {
     if (!user) return;
     try {
-      const profile = await getUserProfile(user.uid);
-      const userRole = Number(profile?.role ?? 1);
-      setRole(userRole);
-      const adminFlag = userRole === 0;
-      setIsAdmin(adminFlag);
-
-      const fetchedOrders = adminFlag
-        ? await getAllOrders(userRole)
+      setLoading(true);
+      const fetchedOrders = showAllOrders
+        ? await getAllOrders(role)
         : await getUserOrders(user.uid);
 
       setOrders(fetchedOrders);
@@ -55,11 +50,17 @@ export default function OrdersScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [user, role, showAllOrders]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     fetchOrders();
-  }, [user]);
+  }, [fetchOrders]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchOrders();
+    }, [fetchOrders]),
+  );
 
   if (!user) {
     return <Redirect href="/login" />;
@@ -89,10 +90,7 @@ export default function OrdersScreen() {
 
   return (
     <View style={styles.container}>
-      <AppHeader
-        title={isAdmin ? "All Orders" : "My Orders"}
-        onMenuPress={() => setMenuVisible(true)}
-      />
+      <AppHeader title={pageTitle} onMenuPress={() => setMenuVisible(true)} />
 
       {loading ? (
         <View style={styles.centered}>
@@ -124,69 +122,10 @@ export default function OrdersScreen() {
         </ScrollView>
       )}
 
-      <Modal
+      <AppDrawerModal
         visible={menuVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setMenuVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.menuCard}>
-            <Text style={styles.menuTitle}>CafeeConnect</Text>
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => {
-                setMenuVisible(false);
-                router.push("/home" as never);
-              }}
-            >
-              <Text style={styles.menuItemText}>Menu</Text>
-            </Pressable>
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => {
-                setMenuVisible(false);
-                router.push("/cart" as never);
-              }}
-            >
-              <View style={styles.rowBetween}>
-                <Text style={styles.menuItemText}>Cart</Text>
-                {itemCount > 0 ? (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{itemCount}</Text>
-                  </View>
-                ) : null}
-              </View>
-            </Pressable>
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => {
-                setMenuVisible(false);
-                router.replace("/orders" as never);
-              }}
-            >
-              <Text style={styles.menuItemText}>
-                {isAdmin ? "All Orders" : "My Orders"}
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[styles.menuItem, styles.logoutItem]}
-              onPress={() => {
-                setMenuVisible(false);
-                logout();
-              }}
-            >
-              <Text style={styles.logoutText}>Logout</Text>
-            </Pressable>
-            <Pressable
-              style={styles.closeButton}
-              onPress={() => setMenuVisible(false)}
-            >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setMenuVisible(false)}
+      />
     </View>
   );
 }
@@ -209,63 +148,5 @@ const styles = StyleSheet.create({
   list: {
     paddingBottom: 24,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.35)",
-    justifyContent: "flex-start",
-  },
-  menuCard: {
-    width: "72%",
-    height: "100%",
-    backgroundColor: "#4b2e1f",
-    paddingTop: 48,
-    paddingHorizontal: 20,
-  },
-  menuTitle: {
-    color: "#fff8f2",
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: 24,
-  },
-  menuItem: {
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.15)",
-  },
-  rowBetween: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  menuItemText: {
-    color: "#fff8f2",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  badge: {
-    backgroundColor: "#d97706",
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  badgeText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  closeButton: {
-    marginTop: 24,
-  },
-  closeButtonText: {
-    color: "#f4d9c6",
-    fontWeight: "600",
-  },
-  logoutItem: {
-    marginTop: 12,
-  },
-  logoutText: {
-    color: "#fecaca",
-    fontSize: 16,
-    fontWeight: "700",
-  },
 });
+
