@@ -16,6 +16,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { OrderCard } from "@/components/OrderCard";
 import { useAuth } from "@/hooks/useAuth";
 import {
+  deleteOrder,
   getAllOrders,
   getUserOrders,
   updateOrderStatus,
@@ -88,6 +89,29 @@ export default function OrdersScreen() {
     }
   };
 
+  const handleDeleteOrder = (orderId: string) => {
+    Alert.alert(
+      "Delete Order",
+      "Are you sure you want to delete this order?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteOrder(orderId);
+              setOrders((prev) => prev.filter((ord) => ord.id !== orderId));
+              Alert.alert("Deleted", "Order has been deleted.");
+            } catch (error) {
+              Alert.alert("Error", "Failed to delete order.");
+            }
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <View style={styles.container}>
       <AppHeader title={pageTitle} onMenuPress={() => setMenuVisible(true)} />
@@ -118,6 +142,7 @@ export default function OrdersScreen() {
               orderNumber={orders.length - index}
               isAdmin={isAdmin}
               onUpdateStatus={handleUpdateStatus}
+              onDeleteOrder={handleDeleteOrder}
             />
           ))}
         </ScrollView>

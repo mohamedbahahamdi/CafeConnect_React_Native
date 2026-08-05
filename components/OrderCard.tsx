@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -8,6 +9,7 @@ interface OrderCardProps {
   orderNumber?: number;
   isAdmin?: boolean;
   onUpdateStatus?: (orderId: string, nextStatus: OrderStatus) => void;
+  onDeleteOrder?: (orderId: string) => void;
 }
 
 const formatDate = (createdAt: unknown): string => {
@@ -49,6 +51,7 @@ export const OrderCard = ({
   orderNumber,
   isAdmin = false,
   onUpdateStatus,
+  onDeleteOrder,
 }: OrderCardProps) => {
   const getStatusBadgeStyle = (status: OrderStatus) => {
     switch (status) {
@@ -84,10 +87,22 @@ export const OrderCard = ({
             <Text style={styles.orderDate}>{formattedDate}</Text>
           ) : null}
         </View>
-        <View style={[styles.badge, { backgroundColor: badge.bg }]}>
-          <Text style={[styles.badgeText, { color: badge.text }]}>
-            {badge.label}
-          </Text>
+        <View style={styles.headerRight}>
+          <View style={[styles.badge, { backgroundColor: badge.bg }]}>
+            <Text style={[styles.badgeText, { color: badge.text }]}>
+              {badge.label}
+            </Text>
+          </View>
+          {onDeleteOrder ? (
+            <TouchableOpacity
+              style={styles.deleteCrossBtn}
+              onPress={() => onDeleteOrder(order.id)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityLabel="Delete order"
+            >
+              <Ionicons name="close-circle" size={22} color="#dc2626" />
+            </TouchableOpacity>
+          ) : null}
         </View>
       </View>
 
@@ -152,6 +167,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#7a5c45",
     marginTop: 2,
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  deleteCrossBtn: {
+    padding: 2,
+    justifyContent: "center",
+    alignItems: "center",
   },
   badge: {
     paddingHorizontal: 10,

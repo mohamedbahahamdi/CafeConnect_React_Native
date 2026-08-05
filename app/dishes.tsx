@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 
@@ -125,7 +126,9 @@ export default function DishesScreen() {
       <View style={styles.headerRow}>
         <Text style={styles.title}>Dishes</Text>
         {isAdmin ? (
-          <CustomButton title="Add Menu Items" onPress={handleCreate} />
+          <TouchableOpacity style={styles.addBtn} onPress={handleCreate}>
+            <Text style={styles.addBtnText}>+ Add Menu Items</Text>
+          </TouchableOpacity>
         ) : null}
       </View>
 
@@ -162,12 +165,26 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8fafc",
   },
   headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
-    gap: 8,
   },
   title: {
     fontSize: 24,
     fontWeight: "700",
+    color: "#4b2e1f",
+  },
+  addBtn: {
+    backgroundColor: "#4b2e1f",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  addBtnText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 13,
   },
   list: {
     paddingBottom: 24,

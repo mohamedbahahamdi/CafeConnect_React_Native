@@ -1,6 +1,7 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   getDocs,
   query,
@@ -147,5 +148,10 @@ export const updateOrderStatus = async (
 
   const orderRef = doc(db, ORDERS_COLLECTION, orderId);
   await updateDoc(orderRef, { status });
+};
+
+export const deleteOrder = async (orderId: string): Promise<void> => {
+  const orderRef = doc(db, ORDERS_COLLECTION, orderId);
+  await deleteDoc(orderRef);
 };
 

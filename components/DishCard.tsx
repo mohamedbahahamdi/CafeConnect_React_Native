@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -53,10 +54,11 @@ export const DishCard = ({
               <Text style={styles.buttonText}>Edit</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.buttonDanger}
+              style={styles.crossDeleteBtn}
               onPress={() => onDelete(dish)}
+              accessibilityLabel="Delete dish"
             >
-              <Text style={styles.buttonText}>Delete</Text>
+              <Ionicons name="close" size={18} color="#fff" />
             </TouchableOpacity>
           </>
         ) : null}
@@ -69,7 +71,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: "#fffdf9",
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: "#e2e8f0",
@@ -78,52 +80,58 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   name: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "700",
   },
   description: {
     color: "#475569",
-    fontSize: 14,
+    fontSize: 13,
   },
   price: {
     color: "#0f172a",
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
   },
   available: {
     color: "#16a34a",
     fontWeight: "600",
+    fontSize: 13,
   },
   unavailable: {
     color: "#dc2626",
     fontWeight: "600",
+    fontSize: 13,
   },
   actions: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 12,
+    alignItems: "center",
+    flexWrap: "nowrap",
+    gap: 6,
+    marginTop: 10,
   },
   button: {
     backgroundColor: "#4b2e1f",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
   },
   buttonSuccess: {
     backgroundColor: "#2e7d32",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
   },
-  buttonDanger: {
+  crossDeleteBtn: {
     backgroundColor: "#dc2626",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 6,
+    alignItems: "center",
+    justifyContent: "center",
   },
   buttonText: {
     color: "#fff",
     fontWeight: "600",
+    fontSize: 13,
   },
 });

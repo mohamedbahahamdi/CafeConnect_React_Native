@@ -42,7 +42,7 @@ export default function SignupScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Create account</Text>
-      <Text style={styles.subtitle}>Join CafeConnect</Text>
+      <Text style={styles.subtitle}>Join Coffee Connect</Text>
 
       <CustomInput value={email} placeholder="Email" onChangeText={setEmail} />
       <CustomInput

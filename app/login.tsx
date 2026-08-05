@@ -35,7 +35,9 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to Coffe Connect</Text>
+      <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
+        Welcome to Coffee Connect
+      </Text>
       <Text style={styles.subtitle}>Sign in to continue</Text>
 
       <CustomInput value={email} placeholder="Email" onChangeText={setEmail} />
@@ -67,9 +69,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8fafc",
   },
   title: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: "700",
     marginBottom: 8,
+    color: "#4b2e1f",
   },
   subtitle: {
     fontSize: 16,

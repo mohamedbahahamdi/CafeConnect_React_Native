@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
@@ -117,8 +118,13 @@ export default function EditDishScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Pressable onPress={() => router.back()}>
-          <Text style={styles.backText}>← Back</Text>
+        <Pressable
+          style={styles.backButton}
+          onPress={() => router.back()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="arrow-back" size={28} color="#4b2e1f" />
+          <Text style={styles.backText}>Back</Text>
         </Pressable>
         <Text style={styles.title}>Edit Dish</Text>
       </View>
@@ -140,13 +146,22 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   headerRow: {
-    marginBottom: 8,
+    marginTop: 10,
+    marginBottom: 12,
+  },
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    marginBottom: 10,
+    alignSelf: "flex-start",
   },
   backText: {
     color: "#4b2e1f",
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
-    marginBottom: 8,
+    marginLeft: 6,
   },
   title: {
     fontSize: 24,
