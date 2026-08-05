@@ -10,6 +10,7 @@ import {
 } from "firebase/firestore";
 
 import { db } from "@/firebase";
+import { getUserProfile } from "@/services/userService";
 import type { Order, OrderItem, OrderStatus } from "@/types/order";
 
 const ORDERS_COLLECTION = "orders";
@@ -115,7 +116,24 @@ export const getAllOrders = async (role: number): Promise<Order[]> => {
     toOrder(docSnapshot.id, docSnapshot.data()),
   );
 
-  return orders.sort(
+  const uniqueUserIds = Array.from(
+    new Set(orders.map((o) => o.userId).filter(Boolean)),
+  );
+
+  const userProfiles = await Promise.all(
+    uniqueUserIds.map(async (uid) => {
+      const profile = await getUserProfile(uid);
+      return { uid, role: profile?.role ?? 1 };
+    }),
+  );
+
+  const adminUserIds = new Set(
+    userProfiles.filter((p) => p.role === 0).map((p) => p.uid),
+  );
+
+  const clientOrders = orders.filter((o) => !adminUserIds.has(o.userId));
+
+  return clientOrders.sort(
     (a, b) => getTimestampMs(b.createdAt) - getTimestampMs(a.createdAt),
   );
 };

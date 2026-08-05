@@ -5,12 +5,48 @@ import type { Order, OrderStatus } from "@/types/order";
 
 interface OrderCardProps {
   order: Order;
+  orderNumber?: number;
   isAdmin?: boolean;
   onUpdateStatus?: (orderId: string, nextStatus: OrderStatus) => void;
 }
 
+const formatDate = (createdAt: unknown): string => {
+  if (!createdAt) return "";
+  let date: Date | null = null;
+  if (
+    typeof createdAt === "object" &&
+    createdAt !== null &&
+    "toMillis" in createdAt &&
+    typeof (createdAt as { toMillis: () => number }).toMillis === "function"
+  ) {
+    date = new Date((createdAt as { toMillis: () => number }).toMillis());
+  } else if (
+    typeof createdAt === "object" &&
+    createdAt !== null &&
+    "seconds" in createdAt &&
+    typeof (createdAt as { seconds: number }).seconds === "number"
+  ) {
+    date = new Date((createdAt as { seconds: number }).seconds * 1000);
+  } else if (createdAt instanceof Date) {
+    date = createdAt;
+  } else if (typeof createdAt === "number" || typeof createdAt === "string") {
+    date = new Date(createdAt);
+  }
+
+  if (!date || isNaN(date.getTime())) return "";
+
+  return date.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
 export const OrderCard = ({
   order,
+  orderNumber,
   isAdmin = false,
   onUpdateStatus,
 }: OrderCardProps) => {
@@ -35,12 +71,18 @@ export const OrderCard = ({
 
   const badge = getStatusBadgeStyle(order.status);
   const nextStatus = getNextStatus(order.status);
+  const formattedDate = formatDate(order.createdAt);
 
   return (
     <View style={styles.card}>
       <View style={styles.header}>
         <View style={styles.orderIdWrap}>
-          <Text style={styles.orderId}>Order #{order.id.slice(-6)}</Text>
+          <Text style={styles.orderId}>
+            Order #{orderNumber ?? 1}
+          </Text>
+          {formattedDate ? (
+            <Text style={styles.orderDate}>{formattedDate}</Text>
+          ) : null}
         </View>
         <View style={[styles.badge, { backgroundColor: badge.bg }]}>
           <Text style={[styles.badgeText, { color: badge.text }]}>
@@ -56,7 +98,7 @@ export const OrderCard = ({
               {item.quantity}x {item.name}
             </Text>
             <Text style={styles.itemPrice}>
-              ${(item.price * item.quantity).toFixed(2)}
+              {(item.price * item.quantity).toFixed(2)} dt
             </Text>
           </View>
         ))}
@@ -66,7 +108,7 @@ export const OrderCard = ({
 
       <View style={styles.footer}>
         <Text style={styles.totalLabel}>Total:</Text>
-        <Text style={styles.totalAmount}>${order.total.toFixed(2)}</Text>
+        <Text style={styles.totalAmount}>{order.total.toFixed(2)} dt</Text>
       </View>
 
       {isAdmin && nextStatus && onUpdateStatus ? (
@@ -105,6 +147,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: "#4b2e1f",
+  },
+  orderDate: {
+    fontSize: 12,
+    color: "#7a5c45",
+    marginTop: 2,
   },
   badge: {
     paddingHorizontal: 10,

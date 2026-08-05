@@ -33,7 +33,7 @@ export default function OrdersScreen() {
 
   const activeFilter = params.filter;
   const showAllOrders = isAdmin && activeFilter === "all";
-  const pageTitle = showAllOrders ? "All Orders" : "My Orders";
+  const pageTitle = showAllOrders ? "Client Orders" : "My Orders";
 
   const fetchOrders = useCallback(async () => {
     if (!user) return;
@@ -111,10 +111,11 @@ export default function OrdersScreen() {
             />
           }
         >
-          {orders.map((order) => (
+          {orders.map((order, index) => (
             <OrderCard
               key={order.id}
               order={order}
+              orderNumber={orders.length - index}
               isAdmin={isAdmin}
               onUpdateStatus={handleUpdateStatus}
             />

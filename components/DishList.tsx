@@ -33,7 +33,7 @@ export const DishList = ({
       <View style={styles.headerRow}>
         <Text style={styles.title}>{title}</Text>
         {isAdmin && onCreate ? (
-          <CustomButton title="Add Dish" onPress={onCreate} />
+          <CustomButton title="Add Menu Items" onPress={onCreate} />
         ) : null}
       </View>
 

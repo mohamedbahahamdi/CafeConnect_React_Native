@@ -53,7 +53,7 @@ export const AppDrawer = ({ onClose }: AppDrawerProps) => {
           style={styles.item}
           onPress={() => handleNavigate("/orders", { filter: "all" })}
         >
-          <Text style={styles.itemText}>All Orders</Text>
+          <Text style={styles.itemText}>Client Orders</Text>
         </Pressable>
       ) : null}
 

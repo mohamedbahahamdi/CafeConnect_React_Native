@@ -25,7 +25,7 @@ export const DishCard = ({
       <View style={styles.infoSection}>
         <Text style={styles.name}>{dish.name}</Text>
         <Text style={styles.description}>{dish.description}</Text>
-        <Text style={styles.price}>Price: ${dish.price.toFixed(2)}</Text>
+        <Text style={styles.price}>Price: {dish.price.toFixed(2)} dt</Text>
         <Text style={dish.is_available ? styles.available : styles.unavailable}>
           {dish.is_available ? "Available" : "Unavailable"}
         </Text>

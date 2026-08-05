@@ -10,7 +10,7 @@ interface AppHeaderProps {
 export const AppHeader = ({ title, subtitle, onMenuPress }: AppHeaderProps) => {
   return (
     <View style={styles.header}>
-      <Pressable onPress={onMenuPress} accessibilityLabel="Open menu">
+      <Pressable style={styles.hamburgerTouch} onPress={onMenuPress} accessibilityLabel="Open menu">
         <Text style={styles.hamburger}>☰</Text>
       </Pressable>
       <View style={styles.headerTextWrap}>
@@ -27,6 +27,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     marginBottom: 16,
+  },
+  hamburgerTouch: {
+    paddingTop: 10,
+    paddingBottom: 4,
+    paddingRight: 6,
+    marginTop: 4,
   },
   hamburger: {
     fontSize: 26,

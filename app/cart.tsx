@@ -84,7 +84,7 @@ export default function CartScreen() {
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.totalLabel}>Total Amount:</Text>
-              <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
+              <Text style={styles.totalValue}>{total.toFixed(2)} dt</Text>
             </View>
 
             {submitting ? (

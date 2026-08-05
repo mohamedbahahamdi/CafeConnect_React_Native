@@ -21,10 +21,14 @@ export const AppDrawerModal: React.FC<AppDrawerModalProps> = ({
     >
       <View style={styles.modalOverlay}>
         <View style={styles.menuCard}>
-          <AppDrawer onClose={onClose} />
-          <Pressable style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeButtonText}>Close</Text>
+          <Pressable
+            style={styles.closeButton}
+            onPress={onClose}
+            accessibilityLabel="Close menu"
+          >
+            <Text style={styles.closeButtonText}>✕</Text>
           </Pressable>
+          <AppDrawer onClose={onClose} />
         </View>
       </View>
     </Modal>
@@ -44,13 +48,18 @@ const styles = StyleSheet.create({
     paddingTop: 48,
     paddingHorizontal: 20,
     paddingBottom: 24,
+    position: "relative",
   },
   closeButton: {
-    marginTop: 16,
-    paddingVertical: 8,
+    position: "absolute",
+    top: 14,
+    right: 14,
+    zIndex: 10,
+    padding: 8,
   },
   closeButtonText: {
-    color: "#f4d9c6",
-    fontWeight: "600",
+    color: "#ef4444",
+    fontSize: 22,
+    fontWeight: "800",
   },
 });

@@ -125,7 +125,7 @@ export default function DishesScreen() {
       <View style={styles.headerRow}>
         <Text style={styles.title}>Dishes</Text>
         {isAdmin ? (
-          <CustomButton title="Add Dish" onPress={handleCreate} />
+          <CustomButton title="Add Menu Items" onPress={handleCreate} />
         ) : null}
       </View>
 

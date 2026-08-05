@@ -35,7 +35,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome back</Text>
+      <Text style={styles.title}>Welcome to Coffe Connect</Text>
       <Text style={styles.subtitle}>Sign in to continue</Text>
 
       <CustomInput value={email} placeholder="Email" onChangeText={setEmail} />

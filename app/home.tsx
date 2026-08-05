@@ -114,7 +114,7 @@ export default function HomeScreen() {
         onDelete={handleDelete}
         onToggleAvailability={handleToggleAvailability}
         onAddToCart={handleAddToCart}
-        title="Today's Menu"
+        title="Our Menu"
         emptyMessage={
           loadingDishes ? "Loading dishes..." : "No dishes created yet."
         }

@@ -21,7 +21,7 @@ export const CartItemCard = ({
       <View style={styles.headerRow}>
         <View style={styles.info}>
           <Text style={styles.name}>{item.name}</Text>
-          <Text style={styles.unitPrice}>${item.price.toFixed(2)} each</Text>
+          <Text style={styles.unitPrice}>{item.price.toFixed(2)} dt each</Text>
         </View>
         <TouchableOpacity
           onPress={() => onRemove(item.dishId)}
@@ -48,7 +48,7 @@ export const CartItemCard = ({
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.itemTotal}>${itemTotal.toFixed(2)}</Text>
+        <Text style={styles.itemTotal}>{itemTotal.toFixed(2)} dt</Text>
       </View>
     </View>
   );
