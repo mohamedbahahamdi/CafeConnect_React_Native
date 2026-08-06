@@ -52,12 +52,20 @@ export const AppDrawer = ({ onClose }: AppDrawerProps) => {
       </Pressable>
 
       {isAdmin ? (
-        <Pressable
-          style={styles.item}
-          onPress={() => handleNavigate("/orders", { filter: "all" })}
-        >
-          <Text style={styles.itemText}>Client Orders</Text>
-        </Pressable>
+        <>
+          <Pressable
+            style={styles.item}
+            onPress={() => handleNavigate("/orders", { filter: "all" })}
+          >
+            <Text style={styles.itemText}>Client Orders</Text>
+          </Pressable>
+          <Pressable
+            style={styles.item}
+            onPress={() => handleNavigate("/users")}
+          >
+            <Text style={styles.itemText}>Manage Users</Text>
+          </Pressable>
+        </>
       ) : null}
 
       <Pressable

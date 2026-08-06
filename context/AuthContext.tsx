@@ -39,6 +39,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const fetchProfile = async (uid: string) => {
     try {
       const userProfile = await getUserProfile(uid);
+
+      if (userProfile?.isBlocked || userProfile?.deletedAt) {
+        await logoutService();
+        setProfile(null);
+        setAuthError("Your account has been blocked or deleted.");
+        return;
+      }
+
       setProfile(userProfile);
     } catch {
       setProfile(null);

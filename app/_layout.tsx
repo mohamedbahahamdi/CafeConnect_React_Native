@@ -34,6 +34,7 @@ export default function RootLayout() {
               <Stack.Screen name="edit-dish" />
               <Stack.Screen name="cart" />
               <Stack.Screen name="orders" />
+              <Stack.Screen name="users" />
               <Stack.Screen name="(tabs)" />
               <Stack.Screen
                 name="modal"

@@ -3,5 +3,8 @@ export interface UserProfile {
   email: string;
   displayName: string;
   role: number;
+  isBlocked?: boolean;
+  blockedAt?: unknown;
+  deletedAt?: unknown;
   createdAt?: unknown;
 }
