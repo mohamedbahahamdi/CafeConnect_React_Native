@@ -1,6 +1,6 @@
 import { useFocusEffect } from "@react-navigation/native";
-import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
+import { Redirect, useLocalSearchParams } from "expo-router";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -24,7 +24,6 @@ import {
 import type { Order, OrderStatus } from "@/types/order";
 
 export default function OrdersScreen() {
-  const router = useRouter();
   const params = useLocalSearchParams<{ filter?: string }>();
   const { user, role, isAdmin } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -34,7 +33,7 @@ export default function OrdersScreen() {
 
   const activeFilter = params.filter;
   const showAllOrders = isAdmin && activeFilter === "all";
-  const pageTitle = showAllOrders ? "Client Orders" : "My Orders";
+  const pageTitle = showAllOrders ? "Admin Dashboard" : "My Orders";
 
   const fetchOrders = useCallback(async () => {
     if (!user) return;
@@ -63,6 +62,26 @@ export default function OrdersScreen() {
     }, [fetchOrders]),
   );
 
+  const groupedByTable = useMemo(() => {
+    const map: Record<string, Order[]> = {};
+    orders.forEach((ord) => {
+      const tableKey =
+        ord.table_number && ord.table_number !== "N/A"
+          ? `Table ${ord.table_number}`
+          : "Unassigned Table";
+      if (!map[tableKey]) {
+        map[tableKey] = [];
+      }
+      map[tableKey].push(ord);
+    });
+    return map;
+  }, [orders]);
+
+  const tableKeys = Object.keys(groupedByTable).sort((a, b) =>
+    a.localeCompare(b),
+  );
+  const pendingCount = orders.filter((o) => o.status === "pending").length;
+
   if (!user) {
     return <Redirect href="/login" />;
   }
@@ -83,8 +102,8 @@ export default function OrdersScreen() {
           ord.id === orderId ? { ...ord, status: nextStatus } : ord,
         ),
       );
-      Alert.alert("Status Updated", `Order updated to ${nextStatus}.`);
-    } catch (error) {
+      Alert.alert("Status Updated", `Order marked as ${nextStatus}.`);
+    } catch {
       Alert.alert("Error", "Failed to update order status.");
     }
   };
@@ -103,7 +122,7 @@ export default function OrdersScreen() {
               await deleteOrder(orderId);
               setOrders((prev) => prev.filter((ord) => ord.id !== orderId));
               Alert.alert("Deleted", "Order has been deleted.");
-            } catch (error) {
+            } catch {
               Alert.alert("Error", "Failed to delete order.");
             }
           },
@@ -116,6 +135,25 @@ export default function OrdersScreen() {
     <View style={styles.container}>
       <AppHeader title={pageTitle} onMenuPress={() => setMenuVisible(true)} />
 
+      {showAllOrders ? (
+        <View style={styles.statsBanner}>
+          <View style={styles.statBox}>
+            <Text style={styles.statValue}>{tableKeys.length}</Text>
+            <Text style={styles.statLabel}>Active Tables</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statBox}>
+            <Text style={[styles.statValue, { color: "#b45309" }]}>{pendingCount}</Text>
+            <Text style={styles.statLabel}>Pending Orders</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statBox}>
+            <Text style={styles.statValue}>{orders.length}</Text>
+            <Text style={styles.statLabel}>Total Orders</Text>
+          </View>
+        </View>
+      ) : null}
+
       {loading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#4b2e1f" />
@@ -124,6 +162,49 @@ export default function OrdersScreen() {
         <View style={styles.centered}>
           <Text style={styles.emptyText}>No orders found.</Text>
         </View>
+      ) : showAllOrders ? (
+        <ScrollView
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor="#4b2e1f"
+            />
+          }
+        >
+          {tableKeys.map((tableKey) => {
+            const tableOrders = groupedByTable[tableKey];
+            const tablePending = tableOrders.filter((o: Order) => o.status === "pending").length;
+
+            return (
+              <View key={tableKey} style={styles.tableGroupSection}>
+                <View style={styles.tableHeaderBar}>
+                  <View style={styles.tableHeaderLeft}>
+                    <Text style={styles.tableHeaderIcon}>🪑</Text>
+                    <Text style={styles.tableHeaderTitle}>{tableKey}</Text>
+                  </View>
+                  <View style={styles.tableHeaderBadge}>
+                    <Text style={styles.tableHeaderBadgeText}>
+                      {tableOrders.length} order{tableOrders.length > 1 ? "s" : ""} ({tablePending} pending)
+                    </Text>
+                  </View>
+                </View>
+
+                {tableOrders.map((order: Order, idx: number) => (
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    orderNumber={tableOrders.length - idx}
+                    isAdmin={isAdmin}
+                    onUpdateStatus={handleUpdateStatus}
+                    onDeleteOrder={handleDeleteOrder}
+                  />
+                ))}
+              </View>
+            );
+          })}
+        </ScrollView>
       ) : (
         <ScrollView
           contentContainerStyle={styles.list}
@@ -162,6 +243,37 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#f7efe8",
   },
+  statsBanner: {
+    flexDirection: "row",
+    backgroundColor: "#fffdf9",
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#e8dcd0",
+    alignItems: "center",
+    justifyContent: "space-around",
+  },
+  statBox: {
+    alignItems: "center",
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#4b2e1f",
+  },
+  statLabel: {
+    fontSize: 12,
+    color: "#7a5c45",
+    fontWeight: "600",
+    marginTop: 2,
+  },
+  statDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: "#e8dcd0",
+  },
   centered: {
     flex: 1,
     justifyContent: "center",
@@ -173,6 +285,43 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingBottom: 24,
+  },
+  tableGroupSection: {
+    marginBottom: 20,
+  },
+  tableHeaderBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#4b2e1f",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  tableHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  tableHeaderIcon: {
+    fontSize: 16,
+  },
+  tableHeaderTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#fff8f2",
+  },
+  tableHeaderBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  tableHeaderBadgeText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
   },
 });
 

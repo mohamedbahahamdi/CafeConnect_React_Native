@@ -45,36 +45,59 @@ const getTimestampMs = (createdAt: unknown): number => {
   return Date.now();
 };
 
-const toOrder = (id: string, data: Record<string, unknown>): Order => ({
-  id,
-  userId: String(data.userId ?? ""),
-  items: Array.isArray(data.items)
-    ? data.items.map((item) => ({
-        dishId: String(item.dishId ?? ""),
-        name: String(item.name ?? ""),
-        price: Number(item.price ?? 0),
-        quantity: Number(item.quantity ?? 1),
-      }))
-    : [],
-  total: Number(data.total ?? 0),
-  status: (data.status as OrderStatus) || "pending",
-  createdAt: data.createdAt,
-});
+const toOrder = (id: string, data: Record<string, unknown>): Order => {
+  const rawProducts = Array.isArray(data.products)
+    ? data.products
+    : Array.isArray(data.items)
+      ? data.items
+      : [];
+
+  const products: OrderItem[] = rawProducts.map((item) => ({
+    dishId: String(item.dishId ?? ""),
+    name: String(item.name ?? ""),
+    price: Number(item.price ?? 0),
+    quantity: Number(item.quantity ?? 1),
+  }));
+
+  const totalPrice = Number(data.total_price ?? data.total ?? 0);
+  const userIdStr = String(data.user_ref ?? data.userId ?? "");
+  const createdAtVal = data.created_at ?? data.createdAt;
+
+  return {
+    id,
+    user_ref: userIdStr,
+    userId: userIdStr,
+    products,
+    items: products,
+    total_price: totalPrice,
+    total: totalPrice,
+    status: (data.status as OrderStatus) || "pending",
+    table_number: String(data.table_number ?? data.tableNumber ?? "N/A"),
+    created_at: createdAtVal,
+    createdAt: createdAtVal,
+  };
+};
 
 export const createOrder = async (
   userId: string,
   items: OrderItem[],
   total: number,
+  tableNumber: string = "N/A",
 ): Promise<Order> => {
   if (!items || items.length === 0) {
     throw new Error("Cannot place an empty order");
   }
 
   const orderData = {
+    user_ref: userId,
     userId,
+    products: items,
     items,
+    total_price: total,
     total,
     status: "pending" as OrderStatus,
+    table_number: tableNumber.trim() || "N/A",
+    created_at: serverTimestamp(),
     createdAt: serverTimestamp(),
   };
 
@@ -82,24 +105,38 @@ export const createOrder = async (
 
   return {
     id: docRef.id,
+    user_ref: userId,
     userId,
+    products: items,
     items,
+    total_price: total,
     total,
     status: "pending",
+    table_number: tableNumber.trim() || "N/A",
   };
 };
 
 export const getUserOrders = async (userId: string): Promise<Order[]> => {
-  const q = query(
+  const q1 = query(
     collection(db, ORDERS_COLLECTION),
     where("userId", "==", userId),
   );
-
-  const snapshot = await getDocs(q);
-
-  const orders = snapshot.docs.map((docSnapshot) =>
-    toOrder(docSnapshot.id, docSnapshot.data()),
+  const q2 = query(
+    collection(db, ORDERS_COLLECTION),
+    where("user_ref", "==", userId),
   );
+
+  const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+  const orderMap = new Map<string, Order>();
+
+  snap1.docs.forEach((docSnap) => {
+    orderMap.set(docSnap.id, toOrder(docSnap.id, docSnap.data()));
+  });
+  snap2.docs.forEach((docSnap) => {
+    orderMap.set(docSnap.id, toOrder(docSnap.id, docSnap.data()));
+  });
+
+  const orders = Array.from(orderMap.values());
 
   return orders.sort(
     (a, b) => getTimestampMs(b.createdAt) - getTimestampMs(a.createdAt),
@@ -110,7 +147,6 @@ export const getAllOrders = async (role: number): Promise<Order[]> => {
   ensureAdminAccess(role);
 
   const q = query(collection(db, ORDERS_COLLECTION));
-
   const snapshot = await getDocs(q);
 
   const orders = snapshot.docs.map((docSnapshot) =>

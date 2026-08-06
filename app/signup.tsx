@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getAuthErrorMessage } from "@/services/authService";
 
 export default function SignupScreen() {
-  const { user, signUp, loading, authError } = useAuth();
+  const { user, signUp, loading, profileReady, authError } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -35,7 +35,7 @@ export default function SignupScreen() {
     }
   };
 
-  if (user) {
+  if (user && profileReady) {
     return <Redirect href="/home" />;
   }
 

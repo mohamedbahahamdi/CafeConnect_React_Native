@@ -1,12 +1,13 @@
 import { Redirect, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Alert, StyleSheet, View } from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { AppDrawerModal } from "@/components/AppDrawerModal";
 import { AppHeader } from "@/components/AppHeader";
 import { DishList } from "@/components/DishList";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
+import { useTable } from "@/hooks/useTable";
 import {
   deleteDish,
   getDishes,
@@ -18,6 +19,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { user, role, isAdmin } = useAuth();
   const { addToCart } = useCart();
+  const { tableNumber, openTablePrompt } = useTable();
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [loadingDishes, setLoadingDishes] = useState(true);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -98,6 +100,10 @@ export default function HomeScreen() {
   };
 
   const handleAddToCart = (dish: Dish) => {
+    if (!isAdmin && !tableNumber) {
+      openTablePrompt();
+      return;
+    }
     addToCart(dish);
     Alert.alert("Added to Cart", `${dish.name} added to your cart.`);
   };
@@ -105,6 +111,27 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <AppHeader title="Home" onMenuPress={() => setMenuVisible(true)} />
+
+      {!isAdmin ? (
+        <View style={styles.tableBar}>
+          <View style={styles.tableBarLeft}>
+            <Text style={styles.tableBarIcon}>🪑</Text>
+            <Text style={styles.tableBarText}>
+              {tableNumber
+                ? `Table #${tableNumber}`
+                : "No table selected"}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.tableChangeBtn}
+            onPress={openTablePrompt}
+          >
+            <Text style={styles.tableChangeBtnText}>
+              {tableNumber ? "Change" : "Enter Table"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
 
       <DishList
         dishes={dishes}
@@ -133,6 +160,42 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: "#f7efe8",
+  },
+  tableBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#fffdf9",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#e8dcd0",
+  },
+  tableBarLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  tableBarIcon: {
+    fontSize: 18,
+  },
+  tableBarText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#4b2e1f",
+  },
+  tableChangeBtn: {
+    backgroundColor: "#f1e5d8",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  tableChangeBtnText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#4b2e1f",
   },
 });
 

@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
+import { useTable } from "@/hooks/useTable";
 
 interface AppDrawerProps {
   onClose?: () => void;
@@ -13,9 +14,11 @@ export const AppDrawer = ({ onClose }: AppDrawerProps) => {
   const router = useRouter();
   const { logout, isAdmin } = useAuth();
   const { itemCount } = useCart();
+  const { clearTableNumber } = useTable();
 
   const handleLogout = async () => {
     onClose?.();
+    clearTableNumber();
     await logout();
   };
 

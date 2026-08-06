@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 
@@ -15,13 +16,15 @@ import { CartItemCard } from "@/components/CartItemCard";
 import { CustomButton } from "@/components/CustomButton";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
+import { useTable } from "@/hooks/useTable";
 import { createOrder } from "@/services/orderService";
 
 export default function CartScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { cart, updateQuantity, removeFromCart, clearCart, total, itemCount } =
     useCart();
+  const { tableNumber, openTablePrompt } = useTable();
   const [submitting, setSubmitting] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
 
@@ -34,9 +37,14 @@ export default function CartScreen() {
       return;
     }
 
+    if (!isAdmin && !tableNumber.trim()) {
+      openTablePrompt();
+      return;
+    }
+
     setSubmitting(true);
     try {
-      await createOrder(user.uid, cart, total);
+      await createOrder(user.uid, cart, total, tableNumber.trim() || "N/A");
       clearCart();
       router.replace({
         pathname: "/orders",
@@ -78,6 +86,19 @@ export default function CartScreen() {
           </ScrollView>
 
           <View style={styles.summaryCard}>
+            {!isAdmin ? (
+              <View style={styles.tableRow}>
+                <TouchableOpacity
+                  style={styles.tableChip}
+                  onPress={openTablePrompt}
+                >
+                  <Text style={styles.tableChipText}>
+                    {tableNumber ? `Table #${tableNumber}` : "Select Table"} ✏️
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Total Items:</Text>
               <Text style={styles.summaryValue}>{itemCount}</Text>
@@ -137,6 +158,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e2e8f0",
     gap: 12,
+  },
+  tableRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1e5d8",
+  },
+  tableChip: {
+    backgroundColor: "#fefaf6",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#d4a373",
+  },
+  tableChipText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#4b2e1f",
   },
   summaryRow: {
     flexDirection: "row",

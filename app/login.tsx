@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getAuthErrorMessage } from "@/services/authService";
 
 export default function LoginScreen() {
-  const { user, signIn, loading, authError } = useAuth();
+  const { user, signIn, loading, profileReady, authError } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -29,7 +29,7 @@ export default function LoginScreen() {
     }
   };
 
-  if (user) {
+  if (user && profileReady) {
     return <Redirect href="/home" />;
   }
 

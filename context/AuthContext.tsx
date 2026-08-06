@@ -17,6 +17,7 @@ interface AuthContextValue {
   role: number;
   isAdmin: boolean;
   loading: boolean;
+  profileReady: boolean;
   authError: string | null;
   signUp: (email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
@@ -32,6 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileReady, setProfileReady] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
   const fetchProfile = async (uid: string) => {
@@ -53,12 +55,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setProfileReady(false);
+      setLoading(true);
       setUser(firebaseUser);
       if (firebaseUser) {
         await fetchProfile(firebaseUser.uid);
       } else {
         setProfile(null);
       }
+      setProfileReady(true);
       setLoading(false);
     });
 
@@ -75,9 +80,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       await signUpService(email, password);
     } catch (error) {
       setAuthError(getAuthErrorMessage(error));
-      throw error;
-    } finally {
       setLoading(false);
+      throw error;
     }
   };
 
@@ -88,19 +92,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       await signInService(email, password);
     } catch (error) {
       setAuthError(getAuthErrorMessage(error));
-      throw error;
-    } finally {
       setLoading(false);
+      throw error;
     }
   };
 
   const logout = async () => {
     setLoading(true);
+    setProfileReady(false);
     try {
       await logoutService();
       setProfile(null);
     } finally {
       setLoading(false);
+      setProfileReady(true);
     }
   };
 
@@ -111,13 +116,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       role,
       isAdmin,
       loading,
+      profileReady,
       authError,
       signUp,
       signIn,
       logout,
       refreshProfile,
     }),
-    [authError, isAdmin, loading, profile, role, user],
+    [authError, isAdmin, loading, profile, profileReady, role, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
