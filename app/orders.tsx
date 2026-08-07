@@ -14,7 +14,10 @@ import {
 import { AppDrawerModal } from "@/components/AppDrawerModal";
 import { AppHeader } from "@/components/AppHeader";
 import { OrderCard } from "@/components/OrderCard";
+import { PaginationControls } from "@/components/PaginationControls";
+import { SearchBar } from "@/components/SearchBar";
 import { useAuth } from "@/hooks/useAuth";
+import { PAGE_SIZE, usePagination } from "@/hooks/usePagination";
 import {
   deleteOrder,
   getAllOrders,
@@ -30,6 +33,30 @@ export default function OrdersScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredOrders = useMemo(() => {
+    if (!searchQuery.trim()) return orders;
+    const q = searchQuery.toLowerCase().trim();
+    return orders.filter((order) => {
+      const matchId = order.id.toLowerCase().includes(q);
+      const matchTable = (order.table_number || "").toLowerCase().includes(q);
+      const matchStatus = order.status.toLowerCase().includes(q);
+      const matchItems = (order.items || order.products || []).some((item) =>
+        item.name.toLowerCase().includes(q),
+      );
+      return matchId || matchTable || matchStatus || matchItems;
+    });
+  }, [orders, searchQuery]);
+
+  const {
+    page,
+    totalPages,
+    shouldPaginate,
+    paginatedItems: paginatedOrders,
+    goToNext,
+    goToPrev,
+  } = usePagination(filteredOrders);
 
   const activeFilter = params.filter;
   const showAllOrders = isAdmin && activeFilter === "all";
@@ -64,7 +91,7 @@ export default function OrdersScreen() {
 
   const groupedByTable = useMemo(() => {
     const map: Record<string, Order[]> = {};
-    orders.forEach((ord) => {
+    paginatedOrders.forEach((ord) => {
       const tableKey =
         ord.table_number && ord.table_number !== "N/A"
           ? `Table ${ord.table_number}`
@@ -75,7 +102,7 @@ export default function OrdersScreen() {
       map[tableKey].push(ord);
     });
     return map;
-  }, [orders]);
+  }, [paginatedOrders]);
 
   const tableKeys = Object.keys(groupedByTable).sort((a, b) =>
     a.localeCompare(b),
@@ -154,6 +181,14 @@ export default function OrdersScreen() {
         </View>
       ) : null}
 
+      {orders.length > 0 ? (
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search orders by table, status, item..."
+        />
+      ) : null}
+
       {loading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#4b2e1f" />
@@ -161,6 +196,10 @@ export default function OrdersScreen() {
       ) : orders.length === 0 ? (
         <View style={styles.centered}>
           <Text style={styles.emptyText}>No orders found.</Text>
+        </View>
+      ) : filteredOrders.length === 0 ? (
+        <View style={styles.centered}>
+          <Text style={styles.emptyText}>No orders match your search.</Text>
         </View>
       ) : showAllOrders ? (
         <ScrollView
@@ -191,19 +230,36 @@ export default function OrdersScreen() {
                   </View>
                 </View>
 
-                {tableOrders.map((order: Order, idx: number) => (
-                  <OrderCard
-                    key={order.id}
-                    order={order}
-                    orderNumber={tableOrders.length - idx}
-                    isAdmin={isAdmin}
-                    onUpdateStatus={handleUpdateStatus}
-                    onDeleteOrder={handleDeleteOrder}
-                  />
-                ))}
+                {tableOrders.map((order: Order) => {
+                  const globalIndex = paginatedOrders.findIndex(
+                    (item) => item.id === order.id,
+                  );
+
+                  return (
+                    <OrderCard
+                      key={order.id}
+                      order={order}
+                      orderNumber={
+                        orders.length - (page - 1) * PAGE_SIZE - globalIndex
+                      }
+                      isAdmin={isAdmin}
+                      onUpdateStatus={handleUpdateStatus}
+                      onDeleteOrder={handleDeleteOrder}
+                    />
+                  );
+                })}
               </View>
             );
           })}
+
+          {shouldPaginate ? (
+            <PaginationControls
+              page={page}
+              totalPages={totalPages}
+              onPrev={goToPrev}
+              onNext={goToNext}
+            />
+          ) : null}
         </ScrollView>
       ) : (
         <ScrollView
@@ -216,16 +272,25 @@ export default function OrdersScreen() {
             />
           }
         >
-          {orders.map((order, index) => (
+          {paginatedOrders.map((order, index) => (
             <OrderCard
               key={order.id}
               order={order}
-              orderNumber={orders.length - index}
+              orderNumber={orders.length - (page - 1) * PAGE_SIZE - index}
               isAdmin={isAdmin}
               onUpdateStatus={handleUpdateStatus}
               onDeleteOrder={handleDeleteOrder}
             />
           ))}
+
+          {shouldPaginate ? (
+            <PaginationControls
+              page={page}
+              totalPages={totalPages}
+              onPrev={goToPrev}
+              onNext={goToNext}
+            />
+          ) : null}
         </ScrollView>
       )}
 

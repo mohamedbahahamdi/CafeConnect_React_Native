@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -12,6 +12,7 @@ import {
 
 import { CustomButton } from "@/components/CustomButton";
 import { DishCard } from "@/components/DishCard";
+import { SearchBar } from "@/components/SearchBar";
 import { useAuth } from "@/hooks/useAuth";
 import {
   deleteDish,
@@ -28,6 +29,17 @@ export default function DishesScreen() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [role, setRole] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredDishes = useMemo(() => {
+    if (!searchQuery.trim()) return dishes;
+    const q = searchQuery.toLowerCase().trim();
+    return dishes.filter(
+      (dish) =>
+        dish.name.toLowerCase().includes(q) ||
+        (dish.description && dish.description.toLowerCase().includes(q)),
+    );
+  }, [dishes, searchQuery]);
 
   useEffect(() => {
     if (!user) {
@@ -132,11 +144,19 @@ export default function DishesScreen() {
         ) : null}
       </View>
 
+      <SearchBar
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        placeholder="Search dishes..."
+      />
+
       <ScrollView contentContainerStyle={styles.list}>
         {dishes.length === 0 ? (
           <Text style={styles.empty}>No dishes created yet.</Text>
+        ) : filteredDishes.length === 0 ? (
+          <Text style={styles.empty}>No dishes match your search.</Text>
         ) : (
-          dishes.map((dish) => (
+          filteredDishes.map((dish) => (
             <DishCard
               key={dish.id}
               dish={dish}

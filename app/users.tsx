@@ -1,6 +1,6 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { Redirect } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -14,7 +14,10 @@ import {
 
 import { AppDrawerModal } from "@/components/AppDrawerModal";
 import { AppHeader } from "@/components/AppHeader";
+import { PaginationControls } from "@/components/PaginationControls";
+import { SearchBar } from "@/components/SearchBar";
 import { useAuth } from "@/hooks/useAuth";
+import { usePagination } from "@/hooks/usePagination";
 import {
   blockUser,
   deleteUserAccount,
@@ -30,6 +33,27 @@ export default function UsersScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [actionUid, setActionUid] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery.trim()) return users;
+    const q = searchQuery.toLowerCase().trim();
+    return users.filter(
+      (u) =>
+        (u.displayName && u.displayName.toLowerCase().includes(q)) ||
+        (u.email && u.email.toLowerCase().includes(q)) ||
+        (u.uid && u.uid.toLowerCase().includes(q)),
+    );
+  }, [users, searchQuery]);
+
+  const {
+    page,
+    totalPages,
+    shouldPaginate,
+    paginatedItems: paginatedUsers,
+    goToNext,
+    goToPrev,
+  } = usePagination(filteredUsers);
 
   const fetchUsers = useCallback(async () => {
     if (!user || !isAdmin) return;
@@ -163,6 +187,14 @@ export default function UsersScreen() {
         </View>
       </View>
 
+      {users.length > 0 ? (
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search users by name or email..."
+        />
+      ) : null}
+
       {loading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#4b2e1f" />
@@ -170,6 +202,10 @@ export default function UsersScreen() {
       ) : users.length === 0 ? (
         <View style={styles.centered}>
           <Text style={styles.emptyText}>No users found.</Text>
+        </View>
+      ) : filteredUsers.length === 0 ? (
+        <View style={styles.centered}>
+          <Text style={styles.emptyText}>No users match your search.</Text>
         </View>
       ) : (
         <ScrollView
@@ -182,7 +218,7 @@ export default function UsersScreen() {
             />
           }
         >
-          {users.map((item) => {
+          {paginatedUsers.map((item) => {
             const isBlocked = Boolean(item.isBlocked);
             const isBusy = actionUid === item.uid;
 
@@ -238,6 +274,15 @@ export default function UsersScreen() {
               </View>
             );
           })}
+
+          {shouldPaginate ? (
+            <PaginationControls
+              page={page}
+              totalPages={totalPages}
+              onPrev={goToPrev}
+              onNext={goToNext}
+            />
+          ) : null}
         </ScrollView>
       )}
 

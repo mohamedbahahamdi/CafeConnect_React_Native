@@ -1,5 +1,5 @@
 import { Redirect, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -14,6 +14,7 @@ import { AppDrawerModal } from "@/components/AppDrawerModal";
 import { AppHeader } from "@/components/AppHeader";
 import { CartItemCard } from "@/components/CartItemCard";
 import { CustomButton } from "@/components/CustomButton";
+import { SearchBar } from "@/components/SearchBar";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import { useTable } from "@/hooks/useTable";
@@ -27,6 +28,13 @@ export default function CartScreen() {
   const { tableNumber, openTablePrompt } = useTable();
   const [submitting, setSubmitting] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredCart = useMemo(() => {
+    if (!searchQuery.trim()) return cart;
+    const q = searchQuery.toLowerCase().trim();
+    return cart.filter((item) => item.name.toLowerCase().includes(q));
+  }, [cart, searchQuery]);
 
   if (!user) {
     return <Redirect href="/login" />;
@@ -74,15 +82,25 @@ export default function CartScreen() {
         </View>
       ) : (
         <View style={styles.content}>
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search cart items..."
+          />
+
           <ScrollView contentContainerStyle={styles.list}>
-            {cart.map((item) => (
-              <CartItemCard
-                key={item.dishId}
-                item={item}
-                onUpdateQuantity={updateQuantity}
-                onRemove={removeFromCart}
-              />
-            ))}
+            {filteredCart.length === 0 ? (
+              <Text style={styles.emptyText}>No items match your search.</Text>
+            ) : (
+              filteredCart.map((item) => (
+                <CartItemCard
+                  key={item.dishId}
+                  item={item}
+                  onUpdateQuantity={updateQuantity}
+                  onRemove={removeFromCart}
+                />
+              ))
+            )}
           </ScrollView>
 
           <View style={styles.summaryCard}>
